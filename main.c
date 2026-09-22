@@ -20,6 +20,8 @@ int main(){
             ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
     
 	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
+	XButtonEvent start;
+	start.subwindow=None;
 	while(True){
 		XNextEvent(dpy,&ev);
 		if(ev.type==KeyPress){
@@ -35,13 +37,19 @@ int main(){
 		}
 		/*
 		else if(ev.type==ButtonPress){
+			start=ev.xbutton
 			int mc_origin_x=ev.xbutton.x_root;
 			int mc_origin_y=ev.xbutton.y_root;
-			if(ev.xbutton.button==1){
+			if(start.xbutton.button==1){
 				int win_origin_x=ev.xbutton.subwindow.XGetGeometry.x_return;
+				int win_origin_y=ev.xbutton.subwindow.XGetGeometry.y_return;
 			}
-			
+			else if(start.xbutton.button==3){
+				win_origin_width=ev.xbutton.subwindow.XGetGeometry.width_return;
+				win_origin_height=ev.xbutton.subwindow.XGetGeometry.height_return;
+			}
 		}
+		else if(ev.type==MotioNotify)
 		*/
 		else if(ev.type==EnterNotify && ev.xbutton.subwindow!=None){
 			XRaiseWindow(dpy,ev.xbutton.subwindow);
