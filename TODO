@@ -1,0 +1,13 @@
+todo{
+	workspace
+	kill window(EWMH)
+	focus window
+	window border
+	EWMH
+}
+
+done{
+	move ,resize window
+	kill window
+	ignore key(like num lock)
+}
