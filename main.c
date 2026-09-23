@@ -14,13 +14,14 @@ int main(){
 	XEvent ev;
 	Cursor cursor=XCreateFontCursor(dpy,XC_left_ptr);
 	KeyCode q_code=XKeysymToKeycode(dpy, XStringToKeysym("q"));
-	
-	XGrabKey(dpy,q_code,Mod4Mask,DefaultRootWindow(dpy),True,GrabModeAsync,GrabModeAsync);
-    XGrabButton(dpy, 1, Mod4Mask, DefaultRootWindow(dpy), True,
-            ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
-    XGrabButton(dpy, 3, Mod4Mask, DefaultRootWindow(dpy), True,
-            ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
-    
+	int ignore_key[3]={Mod2Mask,LockMask,Mod2Mask|LockMask};
+	for(int i=0;i<4;i++){
+		XGrabKey(dpy,q_code,Mod4Mask|ignore_key[i],DefaultRootWindow(dpy),True,GrabModeAsync,GrabModeAsync);
+	    XGrabButton(dpy, 1, Mod4Mask|ignore_key[i], DefaultRootWindow(dpy), True,
+	            	ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
+	    XGrabButton(dpy, 3, Mod4Mask|ignore_key[i], DefaultRootWindow(dpy), True,
+	            	ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
+    }
 	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
 	
 	int mc_origin_x;//滑鼠原本的xy
