@@ -5,6 +5,7 @@
 header at  /usr/include/X11/Xlib.h
 install libx11-doc can see man page
 API reference:https://tronche.com/gui/x/xlib/function-index.html
+event structures:https://tronche.com/gui/x/xlib/events/structures.html
 */
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -23,7 +24,9 @@ int main(){
 	            	ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
     }
 	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
-	
+
+	//XChangeWindowAttributes(dpy,ev.subwindow,0,)
+	XSelectInput(dpy,DefaultRootWindow(dpy),SubstructureRedirectMask);//監聽SubstructureRedirectMask
 	int mc_origin_x;//滑鼠原本的xy
 	int mc_origin_y;
 	int win_origin_x;//視窗原本的xy
@@ -34,9 +37,22 @@ int main(){
 	unsigned int border,depth;
 	XButtonEvent start;
 	start.subwindow=None;
+	XColor border_color,exact;
+	XAllocNamedColor(dpy,DefaultColormap(dpy,DefaultScreen(dpy)),"blue",&border_color,&exact);//color_name at /usr/share/X11/rgb.txt,or you can see https://en.wikipedia.org/wiki/X11_color_names
+	void focus_win(Window w){
+		XSetInputFocus(dpy,w,RevertToParent,CurrentTime);
+		XRaiseWindow(dpy,w);
+		XSetWindowBorder(dpy,w,border_color.pixel);
+		XSetWindowBorderWidth(dpy,w,3);
+	}
 	while(True){
 		XNextEvent(dpy,&ev);
-		if(ev.type==KeyPress){
+		if(ev.type==MapRequest){
+			XMapWindow(dpy,ev.xmaprequest.window);
+			//XSetInputFocus(dpy,ev.xfocus.window,RevertToParent,CurrentTime);
+			focus_win(ev.xmaprequest.window);
+		}
+		else if(ev.type==KeyPress){
 			/*
 			if(ev.xkey==q_code){
 				XInternAtom(dpy,"WM_DELETE_WINDOW",False);
@@ -79,7 +95,8 @@ int main(){
 		}
 		
 		else if(ev.type==EnterNotify && ev.xcrossing.subwindow!=None){
-			XRaiseWindow(dpy,ev.xcrossing.subwindow);
+			//XRaiseWindow(dpy,ev.xcrossing.subwindow);
+			focus_win(ev.xcrossing.subwindow);
 		}
 		XFlush(dpy);
 	}
