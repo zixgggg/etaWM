@@ -16,7 +16,7 @@ int main(){
 	Cursor cursor=XCreateFontCursor(dpy,XC_left_ptr);
 	KeyCode q_code=XKeysymToKeycode(dpy, XStringToKeysym("q"));
 	int ignore_key[3]={Mod2Mask,LockMask,Mod2Mask|LockMask};
-	for(int i=0;i<4;i++){
+	for(int i=0;i<3;i++){
 		XGrabKey(dpy,q_code,Mod4Mask|ignore_key[i],DefaultRootWindow(dpy),True,GrabModeAsync,GrabModeAsync);
 	    XGrabButton(dpy, 1, Mod4Mask|ignore_key[i], DefaultRootWindow(dpy), True,
 	            	ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
@@ -26,7 +26,7 @@ int main(){
 	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
 
 	//XChangeWindowAttributes(dpy,ev.subwindow,0,)
-	XSelectInput(dpy,DefaultRootWindow(dpy),SubstructureRedirectMask);//監聽SubstructureRedirectMask
+	XSelectInput(dpy,DefaultRootWindow(dpy),SubstructureRedirectMask|SubstructureNotifyMask|EnterWindowMask);//監聽事件
 	int mc_origin_x;//滑鼠原本的xy
 	int mc_origin_y;
 	int win_origin_x;//視窗原本的xy
@@ -48,6 +48,7 @@ int main(){
 	while(True){
 		XNextEvent(dpy,&ev);
 		if(ev.type==MapRequest){
+			XSelectInput(dpy, ev.xmaprequest.window, EnterWindowMask);
 			XMapWindow(dpy,ev.xmaprequest.window);
 			//XSetInputFocus(dpy,ev.xfocus.window,RevertToParent,CurrentTime);
 			focus_win(ev.xmaprequest.window);
@@ -94,9 +95,9 @@ int main(){
 			start.subwindow=None;
 		}
 		
-		else if(ev.type==EnterNotify && ev.xcrossing.subwindow!=None){
+		else if(ev.type==EnterNotify && ev.xcrossing.window!=None){
 			//XRaiseWindow(dpy,ev.xcrossing.subwindow);
-			focus_win(ev.xcrossing.subwindow);
+			focus_win(ev.xcrossing.window);
 		}
 		XFlush(dpy);
 	}
