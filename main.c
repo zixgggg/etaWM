@@ -61,6 +61,21 @@ int main(){
 			//XSetInputFocus(dpy,ev.xfocus.window,RevertToParent,CurrentTime);
 			focus_win_func(ev.xmaprequest.window);
 		}
+		else if(ev.type==ConfigureRequest){
+			XWindowChanges wc;
+			wc.x            = ev.xconfigurerequest.x;
+		    wc.y            = ev.xconfigurerequest.y;
+		    wc.width        = ev.xconfigurerequest.width;
+		    wc.height       = ev.xconfigurerequest.height;
+		    wc.border_width = BORDER_WIDTH;// 強制使用定義的邊框
+		    wc.sibling      = ev.xconfigurerequest.above;
+		    wc.stack_mode   = ev.xconfigurerequest.detail;
+			XConfigureWindow(dpy,
+							 ev.xconfigurerequest.window,
+							 ev.xconfigurerequest.value_mask,
+							 &wc
+			);
+		}
 		else if(ev.type==KeyPress){
 			/*
 			if(ev.xkey==q_code){
