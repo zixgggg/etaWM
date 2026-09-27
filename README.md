@@ -1,2 +1,2 @@
 # etaWM
-floating WM base on C Xlib (reference tinyWM)
+floating WM written in C Xlib (reference tinyWM)
