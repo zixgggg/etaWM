@@ -53,7 +53,7 @@ int main(){
 	start.subwindow=None;
 	XAllocNamedColor(dpy,DefaultColormap(dpy,DefaultScreen(dpy)),"blue",&focus_border_color,&exact);//color_name at /usr/share/X11/rgb.txt,or you can see https://en.wikipedia.org/wiki/X11_color_names
 	XAllocNamedColor(dpy,DefaultColormap(dpy,DefaultScreen(dpy)),"red",&unfocus_border_color,&exact);
-	while(True){
+	for(;;){
 		XNextEvent(dpy,&ev);
 		if(ev.type==MapRequest){
 			XSelectInput(dpy, ev.xmaprequest.window, EnterWindowMask);
