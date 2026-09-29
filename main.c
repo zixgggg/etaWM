@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <string.h>
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <X11/cursorfont.h>
 /*
 need to install libx11-dev
@@ -24,10 +26,40 @@ void focus_win_func(Window w){
 	}
 	focused_win=w;
 }
+Atom wm_delete_window;
+Atom wm_protocols;
+void close_window(Window w){
+	XEvent e={0};
+	e.xclient.type=ClientMessage;
+	e.xclient.window=w;
+	e.xclient.message_type=wm_protocols;
+	e.xclient.format=32;
+	e.xclient.data.l[0]=wm_delete_window;
+	e.xclient.data.l[1]=CurrentTime;
+	XSendEvent(dpy,w,False,NoEventMask,&e);
+}
 int main(){
 	dpy=XOpenDisplay(NULL);
-	XEvent ev;
+	Window root=DefaultRootWindow(dpy);
+	Atom net_supporting_wm_check = XInternAtom(dpy, "_NET_SUPPORTING_WM_CHECK", False);
+    Atom net_wm_name             = XInternAtom(dpy, "_NET_WM_NAME", False);
+    Atom utf8_string             = XInternAtom(dpy, "UTF8_STRING", False);
+    Atom net_close_window		 = XInternAtom(dpy, "_NET_CLOSE_WINDOW",False);
+    wm_delete_window = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+    wm_protocols = XInternAtom(dpy, "WM_PROTOCOLS", False);
+	Window check = XCreateSimpleWindow(dpy,root, 0, 0, 1, 1, 0, 0, 0);
+//	XUnmapWindow(dpy,check);
+	XChangeProperty(dpy, root, net_supporting_wm_check,
+	                XA_WINDOW, 32, PropModeReplace, (unsigned char *)&check, 1);
+	XChangeProperty(dpy, check, net_supporting_wm_check,
+	                XA_WINDOW, 32, PropModeReplace, (unsigned char *)&check, 1);
+	
+	const char *name = "etaWM";
+	XChangeProperty(dpy, check, net_wm_name,
+	                utf8_string, 8, PropModeReplace, (unsigned char *)name, strlen(name));
+
 	Cursor cursor=XCreateFontCursor(dpy,XC_left_ptr);
+	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
 	KeyCode q_code=XKeysymToKeycode(dpy, XStringToKeysym("q"));
 	int ignore_key[3]={Mod2Mask,LockMask,Mod2Mask|LockMask};
 	for(int i=0;i<3;i++){
@@ -37,9 +69,7 @@ int main(){
 	    XGrabButton(dpy, 3, Mod4Mask|ignore_key[i], DefaultRootWindow(dpy), True,
 	            	ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
     }
-	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
-
-	//XChangeWindowAttributes(dpy,ev.subwindow,0,)
+//	XChangePointerControl(dpy,True,True,5,1,4);
 	XSelectInput(dpy,DefaultRootWindow(dpy),SubstructureRedirectMask|SubstructureNotifyMask|EnterWindowMask);//監聽事件
 	int mc_origin_x;//滑鼠原本的xy
 	int mc_origin_y;
@@ -47,12 +77,12 @@ int main(){
 	int win_origin_y;
 	unsigned int win_origin_width;//視窗原本的寬高，XGetGeometry裡面的width_return,height_return等都是unsigned int
 	unsigned int win_origin_height;
-	Window root;
 	unsigned int border,depth;
 	XButtonEvent start;
 	start.subwindow=None;
 	XAllocNamedColor(dpy,DefaultColormap(dpy,DefaultScreen(dpy)),"blue",&focus_border_color,&exact);//color_name at /usr/share/X11/rgb.txt,or you can see https://en.wikipedia.org/wiki/X11_color_names
 	XAllocNamedColor(dpy,DefaultColormap(dpy,DefaultScreen(dpy)),"red",&unfocus_border_color,&exact);
+	XEvent ev;
 	for(;;){
 		XNextEvent(dpy,&ev);
 		if(ev.type==MapRequest){
@@ -89,9 +119,9 @@ int main(){
 				int revert;
 				XGetInputFocus(dpy, &focus, &revert);
 				if (focus != None && focus != DefaultRootWindow(dpy)) {
-					XKillClient(dpy, focus);
+					//XKillClient(dpy, focus);
+					close_window(focus);
 				}
-				
 			}
 		}
 		else if(ev.type==ButtonPress && ev.xbutton.subwindow!=None){
@@ -138,6 +168,11 @@ int main(){
 		    if (ev.xdestroywindow.window == focused_win) {
 		        focused_win = None;
 		    }
+		}
+		else if(ev.type==ClientMessage){
+			if(ev.xclient.message_type==net_close_window){
+				close_window(ev.xclient.window);
+			}
 		}
 		XFlush(dpy);
 	}
