@@ -44,8 +44,8 @@ int main(){
 	Atom net_supporting_wm_check = XInternAtom(dpy, "_NET_SUPPORTING_WM_CHECK", False);
     Atom net_wm_name             = XInternAtom(dpy, "_NET_WM_NAME", False);
     Atom utf8_string             = XInternAtom(dpy, "UTF8_STRING", False);
-    Atom net_close_window		 = XInternAtom(dpy, "_NET_CLOSE_WINDOW",False);
-    wm_delete_window = XInternAtom(dpy, "WM_DELETE_WINDOW", False);
+    Atom net_close_window		 = XInternAtom(dpy, "_NET_CLOSE_WINDOW",False);//_NET_CLOSE_WINDOW是EWMH規定 請WM去關某個視窗
+    wm_delete_window = XInternAtom(dpy, "WM_DELETE_WINDOW", False);//WM_DELETE_WINDOW是ICCCM規定 請程式自己優雅關閉
     wm_protocols = XInternAtom(dpy, "WM_PROTOCOLS", False);
 	Window check = XCreateSimpleWindow(dpy,root, 0, 0, 1, 1, 0, 0, 0);
 //	XUnmapWindow(dpy,check);
