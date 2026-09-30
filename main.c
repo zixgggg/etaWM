@@ -16,6 +16,9 @@ Display * dpy;
 XColor focus_border_color,exact,unfocus_border_color;
 const int BORDER_WIDTH=3;
 Window focused_win=None;
+Atom net_active_window;
+Atom wm_delete_window;
+Atom wm_protocols;
 void focus_win_func(Window w){
 	XSetInputFocus(dpy,w,RevertToParent,CurrentTime);
 	XRaiseWindow(dpy,w);
@@ -25,9 +28,8 @@ void focus_win_func(Window w){
 		XSetWindowBorder(dpy,focused_win,unfocus_border_color.pixel);
 	}
 	focused_win=w;
+	XChangeProperty(dpy,DefaultRootWindow(dpy),net_active_window,XA_WINDOW,32,PropModeReplace,(unsigned char *)&w,1);
 }
-Atom wm_delete_window;
-Atom wm_protocols;
 void close_window(Window w){
 	XEvent e={0};
 	e.xclient.type=ClientMessage;
@@ -45,8 +47,9 @@ int main(){
     Atom net_wm_name             = XInternAtom(dpy, "_NET_WM_NAME", False);
     Atom utf8_string             = XInternAtom(dpy, "UTF8_STRING", False);
     Atom net_close_window		 = XInternAtom(dpy, "_NET_CLOSE_WINDOW",False);//_NET_CLOSE_WINDOW是EWMH規定 請WM去關某個視窗
-    wm_delete_window = XInternAtom(dpy, "WM_DELETE_WINDOW", False);//WM_DELETE_WINDOW是ICCCM規定 請程式自己優雅關閉
-    wm_protocols = XInternAtom(dpy, "WM_PROTOCOLS", False);
+    wm_delete_window			 = XInternAtom(dpy, "WM_DELETE_WINDOW", False);//WM_DELETE_WINDOW是ICCCM規定 請程式自己優雅關閉
+    wm_protocols				 = XInternAtom(dpy, "WM_PROTOCOLS", False);
+    net_active_window			 = XInternAtom(dpy, "_NET_ACTIVE_WINDOW",False);
 	Window check = XCreateSimpleWindow(dpy,root, 0, 0, 1, 1, 0, 0, 0);
 //	XUnmapWindow(dpy,check);
 	XChangeProperty(dpy, root, net_supporting_wm_check,
@@ -170,8 +173,13 @@ int main(){
 		    }
 		}
 		else if(ev.type==ClientMessage){
-			if(ev.xclient.message_type==net_close_window){
-				close_window(ev.xclient.window);
+			Atom message_type=ev.xclient.message_type;
+			Window w=ev.xclient.window;
+			if(message_type==net_close_window){
+				close_window(w);
+			}
+			else if(message_type==net_active_window){
+				focus_win_func(w);
 			}
 		}
 		XFlush(dpy);
