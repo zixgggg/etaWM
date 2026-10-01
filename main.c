@@ -13,13 +13,21 @@ event structures:https://tronche.com/gui/x/xlib/events/structures.html
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 Display * dpy;
-XColor focus_border_color,exact,unfocus_border_color;
 const int BORDER_WIDTH=3;
+const char *name = "etaWM";
+const int MIN_WIN_WIDTH=50;//最小視窗寬高常數（最小可設定為1）
+const int MIN_WIN_HEIGHT=50;
+
+XColor focus_border_color,exact,unfocus_border_color;
 Window focused_win=None;
+Window prev_focus_win=None;
 Atom net_active_window;
 Atom wm_delete_window;
 Atom wm_protocols;
 void focus_win_func(Window w){
+	if(w==None||w==DefaultRootWindow(dpy)||w==focused_win){
+		return;
+	}
 	XSetInputFocus(dpy,w,RevertToParent,CurrentTime);
 	XRaiseWindow(dpy,w);
 	XSetWindowBorder(dpy,w,focus_border_color.pixel);
@@ -27,6 +35,7 @@ void focus_win_func(Window w){
 	if(focused_win!=None && focused_win!=w){
 		XSetWindowBorder(dpy,focused_win,unfocus_border_color.pixel);
 	}
+	prev_focus_win=focused_win;
 	focused_win=w;
 	XChangeProperty(dpy,DefaultRootWindow(dpy),net_active_window,XA_WINDOW,32,PropModeReplace,(unsigned char *)&w,1);
 }
@@ -57,7 +66,6 @@ int main(){
 	XChangeProperty(dpy, check, net_supporting_wm_check,
 	                XA_WINDOW, 32, PropModeReplace, (unsigned char *)&check, 1);
 	
-	const char *name = "etaWM";
 	XChangeProperty(dpy, check, net_wm_name,
 	                utf8_string, 8, PropModeReplace, (unsigned char *)name, strlen(name));
 
@@ -143,11 +151,7 @@ int main(){
 			if(start.button==1){
 				XMoveWindow(dpy,start.subwindow,win_origin_x+move_x,win_origin_y+move_y);
 			}
-			else if(start.button==3){
-	           //最小視窗寬高常數（最小可設定為1）
-				const int MIN_WIN_WIDTH=50;
-				const int MIN_WIN_HEIGHT=50;
-				
+			else if(start.button==3){				
 				XResizeWindow(dpy,start.subwindow,
 					MAX((int)win_origin_width+move_x,MIN_WIN_WIDTH),//視窗原本的位置+滑鼠移動了多少（也就是要移動多少），unsigned int強制轉型成(int) 因為win_origin_width跟win_origin_height是unsigned int，跟int計算會溢位
 					MAX((int)win_origin_height+move_y,MIN_WIN_HEIGHT)
@@ -168,9 +172,19 @@ int main(){
 			
 		}
 		else if (ev.type == DestroyNotify) {
-		    if (ev.xdestroywindow.window == focused_win) {
-		        focused_win = None;
+			Window destroy_win=ev.xdestroywindow.window;
+			
+		    if (destroy_win == prev_focus_win) {
+		        prev_focus_win = None;
 		    }
+		    if(destroy_win==focused_win){
+			    focused_win=None;
+		    	if(prev_focus_win!=None&&prev_focus_win!=destroy_win){
+			        focus_win_func(prev_focus_win);
+			        prev_focus_win=None;
+		    	}
+		    }
+
 		}
 		else if(ev.type==ClientMessage){
 			Atom message_type=ev.xclient.message_type;
