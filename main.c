@@ -72,8 +72,8 @@ int main(){
 	Cursor cursor=XCreateFontCursor(dpy,XC_left_ptr);
 	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
 	KeyCode q_code=XKeysymToKeycode(dpy, XStringToKeysym("q"));
-	int ignore_key[3]={Mod2Mask,LockMask,Mod2Mask|LockMask};
-	for(int i=0;i<3;i++){
+	int ignore_key[4]={Mod2Mask,LockMask,Mod2Mask|LockMask,0};
+	for(int i=0;i<4;i++){
 		XGrabKey(dpy,q_code,Mod4Mask|ignore_key[i],DefaultRootWindow(dpy),True,GrabModeAsync,GrabModeAsync);
 	    XGrabButton(dpy, 1, Mod4Mask|ignore_key[i], DefaultRootWindow(dpy), True,
 	            	ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
