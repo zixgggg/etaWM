@@ -1,13 +1,13 @@
 todo{
 	workspace
-	kill window(EWMH)
-	focus window
-	window border
-	EWMH
+	window border(EWMH,ICCCM)
+	EWMH,ICCCM
+	focus last window when kill current window
 }
 
 done{
+	focus window
 	move ,resize window
-	kill window
+	kill window(EWMH,ICCCM)
 	ignore key(like num lock)
 }
