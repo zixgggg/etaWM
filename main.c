@@ -12,18 +12,23 @@ event structures:https://tronche.com/gui/x/xlib/events/structures.html
 */
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MAX_WIN_AMOUNT 256//xorg預設最多可以跟256的客戶端連線
 Display * dpy;
 const int BORDER_WIDTH=3;
 const char *name = "etaWM";
 const int MIN_WIN_WIDTH=50;//最小視窗寬高常數（最小可設定為1）
 const int MIN_WIN_HEIGHT=50;
+//int workspace[10]={};
 
+
+Window window_list[MAX_WIN_AMOUNT]={0};
 XColor focus_border_color,exact,unfocus_border_color;
 Window focused_win=None;
 Window prev_focus_win=None;
 Atom net_active_window;
 Atom wm_delete_window;
 Atom wm_protocols;
+Atom net_client_list;
 void focus_win_func(Window w){
 	if(w==None||w==DefaultRootWindow(dpy)||w==focused_win){
 		return;
@@ -35,7 +40,6 @@ void focus_win_func(Window w){
 	if(focused_win!=None && focused_win!=w){
 		XSetWindowBorder(dpy,focused_win,unfocus_border_color.pixel);
 	}
-	prev_focus_win=focused_win;
 	focused_win=w;
 	XChangeProperty(dpy,DefaultRootWindow(dpy),net_active_window,XA_WINDOW,32,PropModeReplace,(unsigned char *)&w,1);
 }
@@ -59,6 +63,8 @@ int main(){
     wm_delete_window			 = XInternAtom(dpy, "WM_DELETE_WINDOW", False);//WM_DELETE_WINDOW是ICCCM規定 請程式自己優雅關閉
     wm_protocols				 = XInternAtom(dpy, "WM_PROTOCOLS", False);
     net_active_window			 = XInternAtom(dpy, "_NET_ACTIVE_WINDOW",False);
+    net_client_list				 = XInternAtom(dpy, "_NET_CLIENT_LIST",False);
+
 	Window check = XCreateSimpleWindow(dpy,root, 0, 0, 1, 1, 0, 0, 0);
 //	XUnmapWindow(dpy,check);
 	XChangeProperty(dpy, root, net_supporting_wm_check,
@@ -97,10 +103,17 @@ int main(){
 	for(;;){
 		XNextEvent(dpy,&ev);
 		if(ev.type==MapRequest){
-			XSelectInput(dpy, ev.xmaprequest.window, EnterWindowMask);
-			XMapWindow(dpy,ev.xmaprequest.window);
+			Window w=ev.xmaprequest.window;
+			XSelectInput(dpy,w, EnterWindowMask);
+			XMapWindow(dpy,w);
 			//XSetInputFocus(dpy,ev.xfocus.window,RevertToParent,CurrentTime);
-			focus_win_func(ev.xmaprequest.window);
+			focus_win_func(w);
+			for(int i=0;i<MAX_WIN_AMOUNT;i++){
+				if(window_list[i]==None){
+					window_list[i]=w;
+					break;
+				}
+			}
 		}
 		else if(ev.type==ConfigureRequest){
 			XWindowChanges wc;
@@ -173,7 +186,21 @@ int main(){
 		}
 		else if (ev.type == DestroyNotify) {
 			Window destroy_win=ev.xdestroywindow.window;
-			
+			int destroy_win_index;
+			for(int i=0;i<MAX_WIN_AMOUNT;i++){
+				if(window_list[i]==destroy_win){
+					destroy_win_index=i;
+					break;
+				}
+			}
+			for(int i=destroy_win_index;i<MAX_WIN_AMOUNT-1;i++){
+				window_list[i]=window_list[i+1];
+			}
+			window_list[MAX_WIN_AMOUNT-1]=0;
+			if(destroy_win_index-1>=0){
+				focus_win_func(window_list[destroy_win_index-1]);
+			}
+			/*
 		    if (destroy_win == prev_focus_win) {
 		        prev_focus_win = None;
 		    }
@@ -184,7 +211,7 @@ int main(){
 			        prev_focus_win=None;
 		    	}
 		    }
-
+			*/
 		}
 		else if(ev.type==ClientMessage){
 			Atom message_type=ev.xclient.message_type;
