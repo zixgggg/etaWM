@@ -197,9 +197,12 @@ int main(){
 				window_list[i]=window_list[i+1];
 			}
 			window_list[MAX_WIN_AMOUNT-1]=0;
-			if(destroy_win_index-1>=0){
-				focus_win_func(window_list[destroy_win_index-1]);
-			}
+			if(destroy_win==focused_win){
+				if(destroy_win_index-1>=0){
+					focus_win_func(window_list[destroy_win_index-1]);
+				}
+			};
+
 			/*
 		    if (destroy_win == prev_focus_win) {
 		        prev_focus_win = None;
