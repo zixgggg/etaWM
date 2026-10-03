@@ -15,7 +15,7 @@ event structures:https://tronche.com/gui/x/xlib/events/structures.html
 #define MAX_WIN_AMOUNT 256//xorg預設最多可以跟256的客戶端連線
 Display * dpy;
 const int BORDER_WIDTH=3;
-const char *name = "etaWM";
+const char *name_of_WM = "etaWM";
 const int MIN_WIN_WIDTH=50;//最小視窗寬高常數（最小可設定為1）
 const int MIN_WIN_HEIGHT=50;
 //int workspace[10]={};
@@ -73,7 +73,7 @@ int main(){
 	                XA_WINDOW, 32, PropModeReplace, (unsigned char *)&check, 1);
 	
 	XChangeProperty(dpy, check, net_wm_name,
-	                utf8_string, 8, PropModeReplace, (unsigned char *)name, strlen(name));
+	                utf8_string, 8, PropModeReplace, (unsigned char *)name_of_WM, strlen(name_of_WM));
 
 	Cursor cursor=XCreateFontCursor(dpy,XC_left_ptr);
 	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
