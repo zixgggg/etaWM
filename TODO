@@ -2,7 +2,6 @@ todo{
 	workspace
 	window border(EWMH,ICCCM)
 	EWMH(_NET_SUPPORTED,_NET_CLIENT_LIST),ICCCM
-	focus last window when kill current window
 }
 
 done{
@@ -10,4 +9,5 @@ done{
 	move ,resize window
 	kill window(EWMH,ICCCM)
 	ignore key(like num lock)
+	focus next window when kill current window
 }
