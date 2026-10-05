@@ -24,7 +24,6 @@ const int MIN_WIN_HEIGHT=50;
 Window window_list[MAX_WIN_AMOUNT]={0};
 XColor focus_border_color,exact,unfocus_border_color;
 Window focused_win=None;
-Window prev_focus_win=None;
 Atom net_active_window;
 Atom wm_delete_window;
 Atom wm_protocols;
@@ -109,7 +108,10 @@ int main(){
 			//XSetInputFocus(dpy,ev.xfocus.window,RevertToParent,CurrentTime);
 			focus_win_func(w);
 			for(int i=0;i<MAX_WIN_AMOUNT;i++){
-				if(window_list[i]==None){
+				if(window_list[i]==w){//確保視窗不重複
+					break;
+				}
+				else if(window_list[i]==0){
 					window_list[i]=w;
 					break;
 				}
@@ -186,22 +188,33 @@ int main(){
 		}
 		else if (ev.type == DestroyNotify) {
 			Window destroy_win=ev.xdestroywindow.window;
-			int destroy_win_index;
+			int destroy_win_index=-1;
 			for(int i=0;i<MAX_WIN_AMOUNT;i++){
 				if(window_list[i]==destroy_win){
 					destroy_win_index=i;
 					break;
 				}
 			}
-			for(int i=destroy_win_index;i<MAX_WIN_AMOUNT-1;i++){
-				window_list[i]=window_list[i+1];
+			if(destroy_win_index!=-1){
+				for(int i=destroy_win_index;i<MAX_WIN_AMOUNT-1;i++){//把關掉的視窗ID移出陣列，從關掉的視窗ID那格索引開始把後面的元素覆蓋前面的，因為最後一個元素後面沒元素覆蓋它，所以i<MAX_WIN_AMOUNT-1跑到倒數第二個就好。
+					window_list[i]=window_list[i+1];
+				}
 			}
-			window_list[MAX_WIN_AMOUNT-1]=0;
-			if(destroy_win==focused_win){
-				if(destroy_win_index-1>=0){
+			window_list[MAX_WIN_AMOUNT-1]=0;//覆蓋最後一個元素
+			if(destroy_win==focused_win){//如果關掉的視窗是當前聚焦的視窗
+				focused_win=None;
+				if(destroy_win_index-1>=0){//如果下一個要聚焦的視窗有上一個元素
 					focus_win_func(window_list[destroy_win_index-1]);
 				}
-			};
+				else{//不是destroy_win_index-1>=0就是0，也就是關掉的視窗是陣列的第一個元素，因為前面有把關掉的視窗ID移出陣列並遞補，所以就聚焦遞補上來第一個索引的元素。
+					if(window_list[destroy_win_index]!=0){//如果第一個元素不是0（空的索引）的話，聚焦剛剛遞補的元素，也就是從第二個遞補到第一個的元素
+						focus_win_func(window_list[destroy_win_index]);
+					}
+					else{
+						continue;
+					}
+				}
+			}
 
 			/*
 		    if (destroy_win == prev_focus_win) {
