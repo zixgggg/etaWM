@@ -1,7 +1,7 @@
 todo{
 	workspace
 	window border(EWMH,ICCCM)
-	EWMH,ICCCM
+	EWMH(_NET_SUPPORTED,_NET_CLIENT_LIST),ICCCM
 	focus last window when kill current window
 }
 
