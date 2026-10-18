@@ -1,7 +1,7 @@
 todo{
 	workspace
 	window border(EWMH,ICCCM)
-	EWMH(_NET_SUPPORTED,_NET_CLIENT_LIST),ICCCM
+	EWMH(_NET_SUPPORTED),ICCCM
 }
 
 done{
@@ -10,4 +10,5 @@ done{
 	kill window(EWMH,ICCCM)
 	ignore key(like num lock)
 	focus next window when kill current window
+	_NET_CLIENT_LIST
 }
