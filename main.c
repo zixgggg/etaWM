@@ -113,6 +113,7 @@ int main(){
 				}
 				else if(window_list[i]==0){
 					window_list[i]=w;
+					XChangeProperty(dpy,root,net_client_list,XA_WINDOW,32,PropModeAppend,(unsigned char *)&w,1);//用PropModeAppend模式把視窗ID加到屬性陣列最後面
 					break;
 				}
 			}
@@ -199,8 +200,16 @@ int main(){
 				for(int i=destroy_win_index;i<MAX_WIN_AMOUNT-1;i++){//把關掉的視窗ID移出陣列，從關掉的視窗ID那格索引開始把後面的元素覆蓋前面的，因為最後一個元素後面沒元素覆蓋它，所以i<MAX_WIN_AMOUNT-1跑到倒數第二個就好。
 					window_list[i]=window_list[i+1];
 				}
+				window_list[MAX_WIN_AMOUNT-1]=0;//覆蓋最後一個元素
+				
+				int window_amount=0;//記錄在window_list裡面的視窗數量
+				for(int i=0;i<MAX_WIN_AMOUNT;i++){
+					if(window_list[i]!=0){
+						window_amount=window_amount+1;
+					}
+				}
+				XChangeProperty(dpy,root,net_client_list,XA_WINDOW,32,PropModeReplace,(unsigned char *)window_list,window_amount);//視窗關掉時更新root的_NET_CLIENT_LIST
 			}
-			window_list[MAX_WIN_AMOUNT-1]=0;//覆蓋最後一個元素
 			if(destroy_win==focused_win){//如果關掉的視窗是當前聚焦的視窗
 				focused_win=None;
 				if(destroy_win_index-1>=0){//如果下一個要聚焦的視窗有上一個元素
@@ -215,19 +224,6 @@ int main(){
 					}
 				}
 			}
-
-			/*
-		    if (destroy_win == prev_focus_win) {
-		        prev_focus_win = None;
-		    }
-		    if(destroy_win==focused_win){
-			    focused_win=None;
-		    	if(prev_focus_win!=None&&prev_focus_win!=destroy_win){
-			        focus_win_func(prev_focus_win);
-			        prev_focus_win=None;
-		    	}
-		    }
-			*/
 		}
 		else if(ev.type==ClientMessage){
 			Atom message_type=ev.xclient.message_type;
