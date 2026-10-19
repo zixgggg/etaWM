@@ -3,6 +3,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
+#include "atom.h"
 /*
 need to install libx11-dev
 header at  /usr/include/X11/Xlib.h
@@ -24,10 +25,6 @@ const int MIN_WIN_HEIGHT=50;
 Window window_list[MAX_WIN_AMOUNT]={0};
 XColor focus_border_color,exact,unfocus_border_color;
 Window focused_win=None;
-Atom net_active_window;
-Atom wm_delete_window;
-Atom wm_protocols;
-Atom net_client_list;
 void focus_win_func(Window w){
 	if(w==None||w==DefaultRootWindow(dpy)||w==focused_win){
 		return;
@@ -55,15 +52,7 @@ void close_window(Window w){
 int main(){
 	dpy=XOpenDisplay(NULL);
 	Window root=DefaultRootWindow(dpy);
-	Atom net_supporting_wm_check = XInternAtom(dpy, "_NET_SUPPORTING_WM_CHECK", False);
-    Atom net_wm_name             = XInternAtom(dpy, "_NET_WM_NAME", False);
-    Atom utf8_string             = XInternAtom(dpy, "UTF8_STRING", False);
-    Atom net_close_window		 = XInternAtom(dpy, "_NET_CLOSE_WINDOW",False);//_NET_CLOSE_WINDOW是EWMH規定 請WM去關某個視窗
-    wm_delete_window			 = XInternAtom(dpy, "WM_DELETE_WINDOW", False);//WM_DELETE_WINDOW是ICCCM規定 請程式自己優雅關閉
-    wm_protocols				 = XInternAtom(dpy, "WM_PROTOCOLS", False);
-    net_active_window			 = XInternAtom(dpy, "_NET_ACTIVE_WINDOW",False);
-    net_client_list				 = XInternAtom(dpy, "_NET_CLIENT_LIST",False);
-
+	init_atoms(dpy);
 	Window check = XCreateSimpleWindow(dpy,root, 0, 0, 1, 1, 0, 0, 0);
 //	XUnmapWindow(dpy,check);
 	XChangeProperty(dpy, root, net_supporting_wm_check,
