@@ -9,3 +9,4 @@ extern Atom net_supporting_wm_check;
 extern Atom net_wm_name;
 extern Atom utf8_string;
 extern Atom net_close_window;
+extern Atom net_supported;
