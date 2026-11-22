@@ -3,10 +3,11 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
+#include <X11/Xutil.h>
 #include "atom.h"
 /*
 need to install libx11-dev
-header at  /usr/include/X11/Xlib.h
+header at /usr/include/X11/Xlib.h
 install libx11-doc can see man page
 API reference:https://tronche.com/gui/x/xlib/function-index.html
 event structures:https://tronche.com/gui/x/xlib/events/structures.html
@@ -21,10 +22,9 @@ const int MIN_WIN_WIDTH=50;//最小視窗寬高常數（最小可設定為1）
 const int MIN_WIN_HEIGHT=50;
 //int workspace[10]={};
 
-
 Window window_list[MAX_WIN_AMOUNT]={0};
 XColor focus_border_color,exact,unfocus_border_color;
-Window focused_win=None;
+Window focused_win=None;//目前聚焦視窗
 void focus_win_func(Window w){
 	if(w==None||w==DefaultRootWindow(dpy)||w==focused_win){
 		return;
@@ -49,6 +49,10 @@ void close_window(Window w){
 	e.xclient.data.l[1]=CurrentTime;
 	XSendEvent(dpy,w,False,NoEventMask,&e);
 }
+void fullscreen(Window w){
+	XMoveResizeWindow(dpy,w,0,0, DisplayWidth(dpy,DefaultScreen(dpy)), DisplayHeight(dpy,DefaultScreen(dpy)));
+	XSetWindowBorderWidth(dpy,w,0);
+}
 int main(){
 	dpy=XOpenDisplay(NULL);
 	Window root=DefaultRootWindow(dpy);
@@ -66,6 +70,7 @@ int main(){
 	Cursor cursor=XCreateFontCursor(dpy,XC_left_ptr);
 	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
 	KeyCode q_code=XKeysymToKeycode(dpy, XStringToKeysym("q"));
+	KeyCode f_code=XKeysymToKeycode(dpy, XStringToKeysym("f"));
 	int ignore_key[4]={Mod2Mask,LockMask,Mod2Mask|LockMask,0};
 	for(int i=0;i<4;i++){
 		XGrabKey(dpy,q_code,Mod4Mask|ignore_key[i],DefaultRootWindow(dpy),True,GrabModeAsync,GrabModeAsync);
@@ -73,6 +78,7 @@ int main(){
 	            	ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
 	    XGrabButton(dpy, 3, Mod4Mask|ignore_key[i], DefaultRootWindow(dpy), True,
 	            	ButtonPressMask|ButtonReleaseMask|PointerMotionMask, GrabModeAsync, GrabModeAsync, None, None);
+		XGrabKey(dpy,f_code,Mod4Mask|ignore_key[i],DefaultRootWindow(dpy),True,GrabModeAsync,GrabModeAsync);
     }
 //	XChangePointerControl(dpy,True,True,5,1,4);
 	XSelectInput(dpy,DefaultRootWindow(dpy),SubstructureRedirectMask|SubstructureNotifyMask|EnterWindowMask);//監聽事件
@@ -137,6 +143,14 @@ int main(){
 				if (focus != None && focus != DefaultRootWindow(dpy)) {
 					//XKillClient(dpy, focus);
 					close_window(focus);
+				}
+			}
+			if(ev.xkey.keycode==f_code){
+				if(focused_win==None){
+					continue;
+				}
+				else{
+					fullscreen(focused_win);
 				}
 			}
 		}
