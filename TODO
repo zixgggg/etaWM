@@ -2,9 +2,10 @@ todo{
 	workspace
 	window border(EWMH,ICCCM)
 	EWMH,ICCCM
-	windwo full screem,maximum window
+	maximum window
 	dock ewmh
 	config parser
+	window full screem recover border_width, toggle full screem status, ewmh
 }
 
 done{
@@ -15,4 +16,5 @@ done{
 	focus next window when kill current window
 	_NET_CLIENT_LIST
 	_NET_SUPPORTED
+	window full screem(did not finish recover border_width, toggle full screem status, ewmh)
 }
