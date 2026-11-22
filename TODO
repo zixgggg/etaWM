@@ -4,6 +4,7 @@ todo{
 	EWMH,ICCCM
 	windwo full screem,maximum window
 	dock ewmh
+	config parser
 }
 
 done{
