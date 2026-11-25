@@ -6,6 +6,7 @@ todo{
 	dock ewmh
 	config parser
 	window full screen ewmh
+	error handle
 }
 
 done{
