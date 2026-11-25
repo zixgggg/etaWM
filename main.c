@@ -58,42 +58,47 @@ void close_window(Window w){
 	e.xclient.data.l[1]=CurrentTime;
 	XSendEvent(dpy,w,False,NoEventMask,&e);
 }
-bool is_full_screen(Window w){
-	for(int i=0;i<MAX_WIN_AMOUNT;i++){//尋找該視窗的full_screen_status
+Window_data * find_window_data(Window w){//宣告一個函式，他會回傳該視窗的陣列元素的記憶體位置，那個記憶體位置裝的資料形態是Window_data
+	for(int i=0;i<MAX_WIN_AMOUNT;i++){//尋找該視窗
 		if(window_list[i].window_id==w){
-			return window_list[i].full_screen_status;
+			return &window_list[i];
 		}
 	}
-	return false;//如果沒找到視窗回傳false
+	return NULL;//如果沒找到視窗
 }
 void full_screen(Window w){
-	for(int i=0;i<MAX_WIN_AMOUNT;i++){//尋找該視窗的full_screen_status
-		if(window_list[i].window_id==w){
-			if(window_list[i].full_screen_status==false){//如果這個視窗現在不是全螢幕
-				
-				Window root_return;
-				unsigned int border_width_return;
-				unsigned int depth_return;
-				XGetGeometry(dpy,w,&root_return,//儲存全螢幕前的視窗位子、大小等等
-							 &window_list[i].origin_x,
-							 &window_list[i].origin_y,
-							 &window_list[i].origin_width,
-							 &window_list[i].origin_height,
-							 &border_width_return,
-							 &depth_return
-							 );
-				XSetWindowBorderWidth(dpy,w,0);
-				XMoveResizeWindow(dpy,w,0,0, DisplayWidth(dpy,DefaultScreen(dpy)), DisplayHeight(dpy,DefaultScreen(dpy)));
-				window_list[i].full_screen_status=true;
-				break;
-			}
-			else{//如果這個視窗現在是全螢幕
-				XMoveResizeWindow(dpy,w,window_list[i].origin_x,window_list[i].origin_y, window_list[i].origin_width,window_list[i].origin_height);
-				XSetWindowBorderWidth(dpy,w,BORDER_WIDTH);
-				window_list[i].full_screen_status=false;
-				break;
-			}
-		}
+	Window_data	*data=find_window_data(w);//data是指標
+	Window root_return;
+	unsigned int border_width_return;
+	unsigned int depth_return;
+	XGetGeometry(dpy,w,&root_return,//儲存全螢幕前的視窗位子、大小等等
+				 &data->origin_x,//data->相當於是(*data).
+				 &data->origin_y,
+				 &data->origin_width,
+				 &data->origin_height,
+				 &border_width_return,
+				 &depth_return
+				 );
+	XSetWindowBorderWidth(dpy,w,0);
+	XMoveResizeWindow(dpy,w,0,0, DisplayWidth(dpy,DefaultScreen(dpy)), DisplayHeight(dpy,DefaultScreen(dpy)));
+	data->full_screen_status=true;
+}
+void unfull_screen(Window w){
+	Window_data	*data=find_window_data(w);//data是指標
+	XMoveResizeWindow(dpy,w,data->origin_x,data->origin_y, data->origin_width,data->origin_height);
+	XSetWindowBorderWidth(dpy,w,BORDER_WIDTH);
+	data->full_screen_status=false;
+}
+void toggle_full_screen(Window w){
+	Window_data	*data=find_window_data(w);//data是指標
+	if(data==NULL){
+		return;
+	}
+	if(data->full_screen_status==false){
+		full_screen(w);
+	}
+	else{//如果這個視窗現在是全螢幕
+		unfull_screen(w);
 	}
 }
 int main(){
@@ -109,7 +114,6 @@ int main(){
 	
 	XChangeProperty(dpy, check, net_wm_name,
 	                utf8_string, 8, PropModeReplace, (unsigned char *)name_of_WM, strlen(name_of_WM));
-
 	Cursor cursor=XCreateFontCursor(dpy,XC_left_ptr);
 	XDefineCursor(dpy,DefaultRootWindow(dpy),cursor);
 	KeyCode q_code=XKeysymToKeycode(dpy, XStringToKeysym("q"));
@@ -146,15 +150,15 @@ int main(){
 			//XSetInputFocus(dpy,ev.xfocus.window,RevertToParent,CurrentTime);
 			focus_win_func(w);
 			for(int i=0;i<MAX_WIN_AMOUNT;i++){
-				if(window_list[i].window_id==w){//確保視窗不重複
-					break;
-				}
-				else if(window_list[i].window_id==0){
-					window_list[i].window_id=w;//把視窗id放進陣列
-					XChangeProperty(dpy,root,net_client_list,XA_WINDOW,32,PropModeAppend,(unsigned char *)&w,1);//用PropModeAppend模式把視窗ID加到屬性陣列最後面
-					break;
-				}
-			}
+	            if(window_list[i].window_id==w){//確保視窗不重複
+                    break;
+	            }
+	            else if(window_list[i].window_id==0){
+                    window_list[i].window_id=w;//把視窗id放進陣列
+                    XChangeProperty(dpy,root,net_client_list,XA_WINDOW,32,PropModeAppend,(unsigned char *)&w,1);//用PropModeAppend模式把視窗ID加到屬性陣列最後面
+                    break;
+	            }
+            }
 		}
 		else if(ev.type==ConfigureRequest){
 			XWindowChanges wc;
@@ -193,7 +197,7 @@ int main(){
 					continue;
 				}
 				else{
-					full_screen(focused_win);
+					toggle_full_screen(focused_win);
 				}
 			}
 		}
@@ -209,11 +213,14 @@ int main(){
 
 			int move_x=moved_x-mc_origin_x;//滑鼠了xy移動多少
 			int move_y=moved_y-mc_origin_y;
-
-			if(start.button==1&&is_full_screen(start.subwindow)==false){
+			Window_data*data=find_window_data(start.subwindow);
+			if (data == NULL) {
+			    continue;
+			}
+			if(start.button==1&&data->full_screen_status==false){
 				XMoveWindow(dpy,start.subwindow,win_origin_x+move_x,win_origin_y+move_y);
 			}
-			else if(start.button==3&&is_full_screen(start.subwindow)==false){				
+			else if(start.button==3&&data->full_screen_status==false){
 				XResizeWindow(dpy,start.subwindow,
 					MAX((int)win_origin_width+move_x,MIN_WIN_WIDTH),//視窗原本的位置+滑鼠移動了多少（也就是要移動多少），unsigned int強制轉型成(int) 因為win_origin_width跟win_origin_height是unsigned int，跟int計算會溢位
 					MAX((int)win_origin_height+move_y,MIN_WIN_HEIGHT)
@@ -236,6 +243,7 @@ int main(){
 		else if (ev.type == DestroyNotify) {
 			Window destroy_win=ev.xdestroywindow.window;
 			int destroy_win_index=-1;
+;
 			for(int i=0;i<MAX_WIN_AMOUNT;i++){
 				if(window_list[i].window_id==destroy_win){
 					destroy_win_index=i;
@@ -249,12 +257,15 @@ int main(){
 				window_list[MAX_WIN_AMOUNT-1].window_id=0;//覆蓋最後一個元素
 				
 				int window_amount=0;//記錄在window_list裡面的視窗數量
+				Window net_client_list_for_XChangeProperty[MAX_WIN_AMOUNT]={0};//因為window_list現在是Window_data形態，而_NET_CLIENT_LIST只接受Window；所以要另外建立純 Window ID 陣列再傳入XChangeProperty。
 				for(int i=0;i<MAX_WIN_AMOUNT;i++){
 					if(window_list[i].window_id!=0){
 						window_amount=window_amount+1;
+						net_client_list_for_XChangeProperty[i]=window_list[i].window_id;
 					}
 				}
-				XChangeProperty(dpy,root,net_client_list,XA_WINDOW,32,PropModeReplace,(unsigned char *)window_list,window_amount);//視窗關掉時更新root的_NET_CLIENT_LIST
+				
+				XChangeProperty(dpy,root,net_client_list,XA_WINDOW,32,PropModeReplace,(unsigned char *)net_client_list_for_XChangeProperty,window_amount);//視窗關掉時更新root的_NET_CLIENT_LIST
 			}
 			if(destroy_win==focused_win){//如果關掉的視窗是當前聚焦的視窗
 				focused_win=None;
