@@ -10,3 +10,5 @@ extern Atom net_wm_name;
 extern Atom utf8_string;
 extern Atom net_close_window;
 extern Atom net_supported;
+extern Atom net_wm_state;
+extern Atom net_wm_state_fullscreen;

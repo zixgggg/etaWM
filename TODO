@@ -5,7 +5,6 @@ todo{
 	maximum window
 	dock ewmh
 	config parser
-	window full screen ewmh
 	command line arguments(like int main(int argc, char *argv[]))
 }
 
@@ -18,5 +17,6 @@ done{
 	_NET_CLIENT_LIST
 	_NET_SUPPORTED
 	window full screen(hide border_width when full screen, recover border_width when unfull screen, toggle full screen status, restrict window move and resize when it full screen)
+	window full screen ewmh
 	error handle
 }

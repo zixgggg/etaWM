@@ -12,6 +12,8 @@ header at /usr/include/X11/Xlib.h
 install libx11-doc can see man page
 API reference:https://tronche.com/gui/x/xlib/function-index.html
 event structures:https://tronche.com/gui/x/xlib/events/structures.html
+ICCCM:https://tronche.com/gui/x/icccm/
+EWMH:https://specifications.freedesktop.org/wm/latest/index.html
 */
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -82,12 +84,25 @@ void full_screen(Window w){
 	XSetWindowBorderWidth(dpy,w,0);
 	XMoveResizeWindow(dpy,w,0,0, DisplayWidth(dpy,DefaultScreen(dpy)), DisplayHeight(dpy,DefaultScreen(dpy)));
 	data->full_screen_status=true;
+	XChangeProperty(dpy, w, net_wm_state,
+	                XA_ATOM, 32, PropModeReplace, (unsigned char *)&net_wm_state_fullscreen, 1);
+
 }
 void unfull_screen(Window w){
 	Window_data	*data=find_window_data(w);//data是指標
 	XMoveResizeWindow(dpy,w,data->origin_x,data->origin_y, data->origin_width,data->origin_height);
 	XSetWindowBorderWidth(dpy,w,BORDER_WIDTH);
 	data->full_screen_status=false;
+	XChangeProperty(dpy,
+					w,//被改屬性的目標視窗
+					net_wm_state,//要改什麼屬性
+	                XA_ATOM,//傳入的資料是什麼型別
+	                32,//每個元素用幾個bit儲存，大部分是32，字串是8
+	                PropModeReplace,//寫入模式，PropModeReplace覆蓋整個屬性、PropModeAppend在最後面加入、PropModePrepend在最前面加入
+	                (unsigned char *)NULL,//要寫入的資料指標，(unsigned char *)只是強制轉型讓編譯器不報警告
+	                0//資料裡有幾個元素
+	                );
+	
 }
 void toggle_full_screen(Window w){
 	Window_data	*data=find_window_data(w);//data是指標
@@ -297,6 +312,28 @@ int main(){
 			}
 			else if(message_type==net_active_window){
 				focus_win_func(w);
+			}
+			else if(message_type==net_wm_state){
+				
+				if((Atom)ev.xclient.data.l[1]==net_wm_state_fullscreen||(Atom)ev.xclient.data.l[2]==net_wm_state_fullscreen){//https://specifications.freedesktop.org/wm/latest/ar01s05.html#id-1.6.8
+					/*
+					ewmh icccm is shit,they are trouble to implementation 
+					ICCCM 是 1989 年的產物，規格書寫得又長又模糊，充滿各種歷史包袱。
+					EWMH 則是後來為了補洞硬疊上去的規範，兩邊還要互相配合，
+					處理Atom、XChangeProperty、ClientMessage的data.l[]等等這些應該是實作WM最麻煩的部分，
+					最大的問題是文檔我都看不懂，如果我能看懂或有現成的EWMH/ICCCM庫的話或許沒這麼麻煩，所以這裡實作EWMH、ICCCM幾乎都是靠AI
+					*/
+					int action=ev.xclient.data.l[0];
+					if(action==1){
+						full_screen(w);
+					}
+					else if(action == 0){
+	                	unfull_screen(w);
+	    			}
+	    			else if(action == 2){
+	                    toggle_full_screen(w);
+	    			}
+				}
 			}
 		}
 		XFlush(dpy);
