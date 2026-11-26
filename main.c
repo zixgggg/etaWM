@@ -101,8 +101,15 @@ void toggle_full_screen(Window w){
 		unfull_screen(w);
 	}
 }
+int error(Display *dpy, XErrorEvent *e){//忽略錯誤讓wm繼續執行
+	(void)dpy;  // 告訴編譯器「我知道沒用到，這是故意的」
+	(void)e;    // e 也沒用到，一起加
+	return 0;
+};
+
 int main(){
 	dpy=XOpenDisplay(NULL);
+	XSetErrorHandler(error);
 	Window root=DefaultRootWindow(dpy);
 	init_atoms(dpy);
 	Window check = XCreateSimpleWindow(dpy,root, 0, 0, 1, 1, 0, 0, 0);
